@@ -1,19 +1,16 @@
 #!/usr/bin/env node
 /**
- * 每日工单总结脚本（优化版 v2）
+ * 每日工单总结脚本（v3 - 集成聊天解析）
  * 
  * 定时任务：每天 22:00 执行
  * 数据来源：飞书多维表格（Bitable）
+ * 数据格式：包含聊天记录的 JSON
  * 智能分类：自动分析问题类别和标签
- * 
- * 输出格式：
- * output/summary-YYYY-MM-DD/
- *   ├── ticket-T20260302001.md
- *   └── daily-overview.md
  */
 
 const fs = require('fs');
 const path = require('path');
+const { parseTicket, parseTickets } = require('./ticket-parser');
 const { classifyTicket } = require('./classifier');
 
 const OUTPUT_BASE = path.join(__dirname, '../output');
@@ -41,7 +38,7 @@ function loadConfig() {
  * 从飞书多维表格读取工单数据
  * 
  * @param {string} date - 日期 (YYYY-MM-DD)
- * @returns {Promise<Array>} 工单列表
+ * @returns {Promise<Array>} 工单列表（原始 JSON 格式）
  */
 async function getTicketsFromBitable(date) {
   const config = loadConfig();
@@ -51,15 +48,21 @@ async function getTicketsFromBitable(date) {
   console.log(`   AppToken: ${config.bitableAppToken || '未配置'}`);
   console.log(`   数据表：${config.bitableTableId || '未配置'}`);
   
-  // 阶段一：返回空数组（待配置后接入 Bitable API）
-  // 阶段二：调用飞书 Bitable API 获取实际数据
+  // 阶段一：返回示例数据（测试用）
+  if (config.bitableAppToken && config.bitableTableId) {
+    // 阶段二：调用飞书 Bitable API 获取实际数据
+    // https://open.feishu.cn/document/ukTMukTMukTM/uAjUwUjLxYjN14SO3gTN
+    console.log('   ✅ 配置已设置，待接入 API');
+  }
+  
+  // 返回示例数据（实际使用时从 API 获取）
   return [];
 }
 
 /**
- * 生成工单总结文档（优化模板）
+ * 生成工单总结文档
  * 
- * @param {object} ticket - 工单数据
+ * @param {object} ticket - 解析后的工单数据
  * @returns {string} Markdown 内容
  */
 function generateTicketSummary(ticket) {
@@ -71,24 +74,14 @@ function generateTicketSummary(ticket) {
     problemDesc,
     rootCause,
     solution,
-    category: manualCategory,
-    tags: manualTags
+    category,
+    tags
   } = ticket;
 
-  // 智能分类（如果工单数据中没有提供）
-  let category = manualCategory;
-  let tags = manualTags;
-  
-  if (!category || !tags) {
-    const classification = classifyTicket(ticket);
-    category = category || classification.category;
-    tags = tags || classification.tags;
-  }
-  
   // 标签格式化
   const tagsStr = Array.isArray(tags) ? tags.join(', ') : (tags || '无');
 
-  return `# 工单总结：${ticketId || '未命名'}
+  return `# 工单总结：${ticketId}
 
 ## 基本信息
 
@@ -192,23 +185,22 @@ async function generateDailySummary(options = {}) {
   console.log(`📅 生成每日总结：${today}`);
   console.log(`📂 输出目录：${outputDir}`);
   
-  // 从多维表格获取工单
-  const tickets = await getTicketsFromBitable(today);
-  console.log(`📋 获取工单：${tickets.length} 个`);
+  // 1. 从多维表格获取原始工单数据（JSON 格式）
+  const rawTickets = await getTicketsFromBitable(today);
+  console.log(`📋 获取原始工单：${rawTickets.length} 个`);
   
-  // 创建输出目录
+  // 2. 解析工单数据（从 JSON 中提取关键信息）
+  const parsedTickets = parseTickets(rawTickets);
+  console.log(`✅ 解析完成：${parsedTickets.length} 个`);
+  
+  // 3. 创建输出目录
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
   }
   
-  // 为每个工单生成总结
+  // 4. 为每个工单生成总结
   const generatedFiles = [];
-  for (const ticket of tickets) {
-    // 智能分类
-    const classification = classifyTicket(ticket);
-    ticket.category = ticket.category || classification.category;
-    ticket.tags = ticket.tags || classification.tags;
-    
+  for (const ticket of parsedTickets) {
     const fileName = `ticket-${ticket.ticketId || 'unknown'}.md`;
     const filePath = path.join(outputDir, fileName);
     const content = generateTicketSummary(ticket);
@@ -218,16 +210,16 @@ async function generateDailySummary(options = {}) {
     console.log(`  ✅ ${fileName} (类别：${ticket.category})`);
   }
   
-  // 生成每日总览
+  // 5. 生成每日总览
   const overviewFile = 'daily-overview.md';
   const overviewPath = path.join(outputDir, overviewFile);
-  const overviewContent = generateDailyOverview(today, tickets);
+  const overviewContent = generateDailyOverview(today, parsedTickets);
   fs.writeFileSync(overviewPath, overviewContent, 'utf-8');
   generatedFiles.push(overviewFile);
   console.log(`  ✅ ${overviewFile}`);
   
-  // 如果无工单，生成空报告
-  if (tickets.length === 0) {
+  // 6. 如果无工单，生成空报告
+  if (parsedTickets.length === 0) {
     const emptyReport = `# 工单日报 - ${today}
 
 ## 📊 概览
@@ -245,7 +237,7 @@ async function generateDailySummary(options = {}) {
   return {
     date: today,
     outputDir,
-    ticketCount: tickets.length,
+    ticketCount: parsedTickets.length,
     generatedFiles,
     status: '阶段一：本地输出（需配置多维表格 AppToken）'
   };
