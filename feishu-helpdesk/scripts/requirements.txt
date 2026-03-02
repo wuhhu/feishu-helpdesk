@@ -1,0 +1,5 @@
+# Python 依赖包
+# 安装：pip install -r requirements.txt
+
+pandas>=2.0.0
+openpyxl>=3.1.0

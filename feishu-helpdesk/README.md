@@ -18,7 +18,8 @@
 ### 2. 每日工单总结
 
 每天 22:00 自动执行：
-- ✅ 从飞书多维表格读取工单数据（含聊天记录 JSON）
+- ✅ 从飞书多维表格读取工单数据（或 Excel 导出）
+- ✅ **Excel 转 JSON 工具**（`excel_to_json.py`）
 - ✅ **自动解析聊天记录**，提取问题描述/根因/解决方案
 - ✅ **智能分析问题类别**（9 种类型自动识别）
 - ✅ **智能分析问题标签**（5 种根因自动匹配）
@@ -35,6 +36,7 @@ feishu-helpdesk/
 ├── 需要配置的内容.md          # 配置清单
 ├── 配置多维表格.md            # 多维表格配置指南
 ├── 配置定时任务.md            # 定时任务配置指南
+├── Excel 转 JSON 工具.md        # Excel 转换工具 ⭐
 ├── QUICKSTART.md             # 快速启动
 ├── INTEGRATION.md            # OpenClaw 集成
 ├── config/
@@ -45,7 +47,10 @@ feishu-helpdesk/
 │   ├── main.js               # 主入口
 │   ├── search-knowledge.js   # 知识库搜索
 │   ├── message-handler.js    # 消息处理 ⭐
-│   └── daily-summary.js      # 每日总结 ⭐
+│   ├── daily-summary.js      # 每日总结 ⭐
+│   ├── ticket-parser.js      # 工单解析器 ⭐
+│   ├── classifier.js         # 智能分类器 ⭐
+│   └── excel_to_json.py      # Excel 转 JSON ⭐
 └── output/
     └── summary-YYYY-MM-DD/   # 总结输出
 ```
@@ -177,6 +182,8 @@ openclaw cron run --job-id <JOB_ID>
 
 ## 🧪 测试
 
+### Node.js 脚本
+
 ```bash
 cd /home/admin/.openclaw/workspace/feishu-helpdesk
 
@@ -188,6 +195,27 @@ node scripts/daily-summary.js
 
 # 测试知识库搜索
 node scripts/search-knowledge.js "密码重置"
+
+# 测试工单解析
+node scripts/ticket-parser.js
+
+# 测试智能分类
+node scripts/classifier.js
+```
+
+### Python 工具
+
+```bash
+cd /home/admin/.openclaw/workspace/feishu-helpdesk/scripts
+
+# 安装依赖
+pip install -r requirements.txt
+
+# 单个文件转换
+python excel_to_json.py ticket_123.xlsx
+
+# 批量转换
+python excel_to_json.py --batch ./excel_files ./json_output
 ```
 
 ---
