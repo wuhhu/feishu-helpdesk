@@ -16,6 +16,28 @@
     "tags": "问题标签",
     "status": "状态"
   },
+  "autoClassification": {
+    "enabled": true,
+    "categories": [
+      "MA 画布",
+      "智能外呼",
+      "bot（话术）",
+      "智能体 bot（话术）",
+      "对账问题",
+      "数据异常",
+      "私有化问题",
+      "海外问题",
+      "政务问题"
+    ],
+    "tags": [
+      "系统处理逻辑缺陷",
+      "接口与集成故障",
+      "数据质量与校验缺失",
+      "系统可靠性与可观测性不足",
+      "操作不当"
+    ],
+    "notes": "如果多维表格中未填写类别和标签，系统会自动分析生成"
+  },
   "notes": {
     "howToGetAppToken": "打开飞书多维表格，URL 中的 /base/ 后面的部分就是 AppToken",
     "howToGetTableId": "打开数据表，URL 中的 /table/ 后面的部分就是 TableId",

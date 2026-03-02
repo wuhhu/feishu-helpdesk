@@ -1,24 +1,20 @@
 #!/usr/bin/env node
 /**
- * 每日工单总结脚本（优化版）
+ * 每日工单总结脚本（优化版 v2）
  * 
  * 定时任务：每天 22:00 执行
  * 数据来源：飞书多维表格（Bitable）
+ * 智能分类：自动分析问题类别和标签
  * 
- * 功能：
- * 1. 从多维表格读取当日已结束的工单
- * 2. 为每个工单生成独立总结文档
- * 3. 输出到 output/ 目录
- * 
- * 输出格式示例：
- * output/summary-2026-03-02/
+ * 输出格式：
+ * output/summary-YYYY-MM-DD/
  *   ├── ticket-T20260302001.md
- *   ├── ticket-T20260302002.md
  *   └── daily-overview.md
  */
 
 const fs = require('fs');
 const path = require('path');
+const { classifyTicket } = require('./classifier');
 
 const OUTPUT_BASE = path.join(__dirname, '../output');
 const CONFIG_PATH = path.join(__dirname, '../config/bitable-config.json');
@@ -32,8 +28,8 @@ function loadConfig() {
   } catch (err) {
     console.warn('⚠️  未找到 bitable-config.json，使用默认配置');
     return {
-      bitableAppToken: '',  // 多维表格 AppToken
-      bitableTableId: '',   // 数据表 ID
+      bitableAppToken: '',
+      bitableTableId: '',
       dateField: '工单日期',
       statusField: '状态',
       closedStatus: '已结束'
@@ -43,8 +39,6 @@ function loadConfig() {
 
 /**
  * 从飞书多维表格读取工单数据
- * 
- * TODO: 阶段一返回模拟数据，阶段二接入 Bitable API
  * 
  * @param {string} date - 日期 (YYYY-MM-DD)
  * @returns {Promise<Array>} 工单列表
@@ -57,29 +51,13 @@ async function getTicketsFromBitable(date) {
   console.log(`   AppToken: ${config.bitableAppToken || '未配置'}`);
   console.log(`   数据表：${config.bitableTableId || '未配置'}`);
   
-  // 阶段一：返回模拟数据（示例）
-  // 阶段二：调用飞书 Bitable API
-  // https://open.feishu.cn/document/ukTMukTMukTM/uAjUwUjLxYjN14SO3gTN
-  
-  return [
-    // 示例数据结构：
-    // {
-    //   ticketId: 'T20260302001',
-    //   date: '2026-03-02',
-    //   requester: '招财',
-    //   assignee: '算盘',
-    //   problemDesc: '用户报告智能外呼任务结束后总有少量数据无法完成...',
-    //   rootCause: '客户在下午 4-5 点非工作时间偷偷往任务中添加新数据...',
-    //   solution: '建议客户规范数据上传时间...',
-    //   category: '智能外呼',
-    //   tags: ['操作不当'],
-    //   status: '已结束'
-    // }
-  ];
+  // 阶段一：返回空数组（待配置后接入 Bitable API）
+  // 阶段二：调用飞书 Bitable API 获取实际数据
+  return [];
 }
 
 /**
- * 生成工单总结文档（按用户提供的模板格式）
+ * 生成工单总结文档（优化模板）
  * 
  * @param {object} ticket - 工单数据
  * @returns {string} Markdown 内容
@@ -93,14 +71,24 @@ function generateTicketSummary(ticket) {
     problemDesc,
     rootCause,
     solution,
-    category,
-    tags = []
+    category: manualCategory,
+    tags: manualTags
   } = ticket;
 
+  // 智能分类（如果工单数据中没有提供）
+  let category = manualCategory;
+  let tags = manualTags;
+  
+  if (!category || !tags) {
+    const classification = classifyTicket(ticket);
+    category = category || classification.category;
+    tags = tags || classification.tags;
+  }
+  
   // 标签格式化
-  const tagsStr = tags.length > 0 ? tags.join(', ') : '无';
+  const tagsStr = Array.isArray(tags) ? tags.join(', ') : (tags || '无');
 
-  return `# 工单总结：${ticketId}
+  return `# 工单总结：${ticketId || '未命名'}
 
 ## 基本信息
 
@@ -149,10 +137,23 @@ function generateDailyOverview(date, tickets) {
   const categoryList = Object.entries(categoryStats)
     .map(([cat, count]) => `- ${cat}: ${count} 个`)
     .join('\n');
+  
+  // 按标签统计
+  const tagStats = {};
+  tickets.forEach(t => {
+    const ticketTags = Array.isArray(t.tags) ? t.tags : [];
+    ticketTags.forEach(tag => {
+      tagStats[tag] = (tagStats[tag] || 0) + 1;
+    });
+  });
+  
+  const tagList = Object.entries(tagStats)
+    .map(([tag, count]) => `- ${tag}: ${count} 个`)
+    .join('\n');
 
   // 工单列表
   const ticketList = tickets.map(t => 
-    `- [${t.ticketId}] ${t.category || '未分类'} - ${t.requester}`
+    `- [${t.ticketId || '未命名'}] ${t.category || '未分类'} - ${t.requester || '未知'}`
   ).join('\n');
 
   return `# 工单日报 - ${date}
@@ -167,6 +168,10 @@ function generateDailyOverview(date, tickets) {
 ## 📋 按类别统计
 
 ${categoryList || '暂无数据'}
+
+## 🏷️ 按标签统计
+
+${tagList || '暂无数据'}
 
 ## 📝 工单列表
 
@@ -199,13 +204,18 @@ async function generateDailySummary(options = {}) {
   // 为每个工单生成总结
   const generatedFiles = [];
   for (const ticket of tickets) {
-    const fileName = `ticket-${ticket.ticketId}.md`;
+    // 智能分类
+    const classification = classifyTicket(ticket);
+    ticket.category = ticket.category || classification.category;
+    ticket.tags = ticket.tags || classification.tags;
+    
+    const fileName = `ticket-${ticket.ticketId || 'unknown'}.md`;
     const filePath = path.join(outputDir, fileName);
     const content = generateTicketSummary(ticket);
     
     fs.writeFileSync(filePath, content, 'utf-8');
     generatedFiles.push(fileName);
-    console.log(`  ✅ ${fileName}`);
+    console.log(`  ✅ ${fileName} (类别：${ticket.category})`);
   }
   
   // 生成每日总览
