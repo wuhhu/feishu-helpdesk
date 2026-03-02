@@ -1,85 +1,62 @@
-# 📋 阶段一实现清单
+# 📋 实现清单
 
 ## ✅ 已完成
 
-### 目录结构
-- [x] 创建项目目录 `/home/admin/.openclaw/workspace/feishu-helpdesk/`
-- [x] 创建子目录：config/, scripts/, logs/, output/
-
-### 文档
-- [x] `README.md` - 项目说明
-- [x] `QUICKSTART.md` - 快速启动指南
-- [x] `CHECKLIST.md` - 本清单
+### 核心功能
+- [x] 知识库搜索模块
+- [x] 消息处理器（简化版 - 只回复问题）
+- [x] 每日总结生成器
+- [x] 工单总结模板（按用户提供格式）
 
 ### 配置文件
-- [x] `config/knowledge-base.json` - 知识库配置模板
-- [x] `config/cron-jobs.json` - 定时任务配置模板
+- [x] `config/knowledge-base.json` - 知识库配置
+- [x] `config/bitable-config.json` - 多维表格配置 ⭐
+- [x] `config/cron-jobs.json` - 定时任务配置
+
+### 文档
+- [x] `README.md` - 项目说明（已更新）
+- [x] `配置多维表格.md` - 多维表格配置指南 ⭐
+- [x] `配置定时任务.md` - 定时任务配置指南
+- [x] `需要配置的内容.md` - 配置清单
+- [x] `QUICKSTART.md` - 快速启动
+- [x] `INTEGRATION.md` - OpenClaw 集成
 
 ### 脚本
 - [x] `scripts/main.js` - 主入口
 - [x] `scripts/search-knowledge.js` - 知识库搜索
-- [x] `scripts/answer-question.js` - 问题应答
-- [x] `scripts/daily-summary.js` - 每日总结
-- [x] `setup-cron.sh` - Cron 任务设置脚本
+- [x] `scripts/message-handler.js` - 消息处理（优化版）⭐
+- [x] `scripts/daily-summary.js` - 每日总结（优化版）⭐
+- [x] `scripts/openclaw-handler.js` - OpenClaw 集成
+- [x] `setup-cron.sh` - Cron 设置脚本
 
 ### 测试
-- [x] 测试 daily-summary.js 运行正常
-- [x] 测试 main.js 命令帮助正常
+- [x] 消息处理测试通过
+- [x] 总结生成测试通过
+- [x] 代码已提交到 GitHub
 
 ---
 
-## ⏳ 待完成（需要你的操作）
+## ⏳ 待完成（需要用户配置）
 
-### 1. 配置知识库空间 ID
-- [ ] 打开飞书知识库，获取空间 ID
-- [ ] 编辑 `config/knowledge-base.json`，填入空间 ID
-- [ ] 在飞书知识库设置中添加机器人为成员（只读权限）
+### 1️⃣ 配置知识库空间 ID 🔴 必须
+- [ ] 获取飞书知识库空间 ID
+- [ ] 编辑 `config/knowledge-base.json`
+- [ ] 在飞书知识库中添加机器人为成员
 
-### 2. 配置定时任务
-- [ ] 运行 `bash setup-cron.sh` 添加每日总结任务
-- [ ] 或手动执行：
-  ```bash
-  openclaw cron add \
-    --name "飞书工单每日总结" \
-    --schedule-cron "0 18 * * *" \
-    --schedule-tz "Asia/Shanghai" \
-    --payload-kind "systemEvent" \
-    --payload-text "【定时任务】执行飞书工单每日总结" \
-    --session-target "main"
-  ```
+### 2️⃣ 配置多维表格 🔴 必须
+- [ ] 创建工单管理多维表格
+- [ ] 获取 AppToken 和 TableId
+- [ ] 编辑 `config/bitable-config.json`
+- [ ] 确保表格字段匹配（工单号、提出人、对接人、问题描述、根因、方案、类别、标签）
+
+### 3️⃣ 配置定时任务 🔴 必须
+- [ ] 运行 `bash setup-cron.sh`
+- [ ] 或手动添加 cron 任务（每天 22:00）
 - [ ] 验证任务：`openclaw cron list`
-- [ ] 测试执行：`openclaw cron run --job-id <ID>`
 
-### 3. 飞书机器人配置
-- [ ] 确认飞书应用已创建
-- [ ] 确认机器人已加入目标群聊
-- [ ] 测试@机器人触发（需要实现消息监听逻辑）
-
-### 4. 集成测试
-- [ ] 测试知识库搜索功能
-- [ ] 测试问题应答流程
-- [ ] 测试定时总结输出
-
----
-
-## 🔧 需要补充的实现
-
-### 消息监听（阶段一核心）
-
-当前脚本是 CLI 工具，需要在 OpenClaw 中实现消息监听逻辑：
-
-```javascript
-// 在 OpenClaw 主会话中监听消息
-// 当收到 @机器人 的消息时：
-// 1. 提取问题内容
-// 2. 调用 search-knowledge.js
-// 3. 回复结果
-```
-
-**实现方式：**
-- 方案 A：在 OpenClaw 配置中添加消息处理钩子
-- 方案 B：使用 sessions_spawn 创建专用监听会话
-- 方案 C：手动触发（临时方案）
+### 4️⃣ OpenClaw 集成 🟡 推荐
+- [ ] 配置消息钩子（自动响应@消息）
+- [ ] 或手动调用处理器
 
 ---
 
@@ -87,21 +64,25 @@
 
 | 功能 | 状态 | 备注 |
 |------|------|------|
-| 知识库搜索 | 🟡 框架完成 | 需要配置空间 ID |
-| 问题应答 | 🟡 框架完成 | 需要消息监听 |
-| 定时总结 | 🟡 框架完成 | 需要配置 cron |
-| 输出到群聊 | 🔴 未实现 | 需要飞书 API 集成 |
-| 输出到本地 | ✅ 完成 | 已测试 |
+| 知识库搜索 | 🟡 框架完成 | 需配置空间 ID |
+| 消息应答 | ✅ 完成 | 只回复问题，不读工单 |
+| 多维表格读取 | 🟡 框架完成 | 需配置 AppToken |
+| 定时总结 | 🟡 框架完成 | 需配置 cron |
+| 输出到本地 | ✅ 完成 | 按日期分组 |
+| 上传知识库 | 🔴 待实现 | 需要写权限 |
 
 ---
 
-## 下一步行动
+## 📝 变更记录
 
-1. **立即**：配置知识库空间 ID
-2. **今天**：设置 cron 定时任务
-3. **本周**：实现消息监听逻辑
-4. **后续**：升级到阶段二（自动化工单处理）
+| 日期 | 变更 | 备注 |
+|------|------|------|
+| 2026-03-02 10:40 | 优化消息处理器 | 简化逻辑，只回复问题 |
+| 2026-03-02 10:40 | 优化总结脚本 | 从多维表格读取数据 |
+| 2026-03-02 10:40 | 更新总结模板 | 按用户提供格式 |
+| 2026-03-02 10:30 | 配置定时任务 | 每天 22:00 执行 |
+| 2026-03-02 10:15 | 初始框架完成 | 阶段一基础功能 |
 
 ---
 
-*最后更新：2026-03-02*
+*最后更新：2026-03-02 10:40*

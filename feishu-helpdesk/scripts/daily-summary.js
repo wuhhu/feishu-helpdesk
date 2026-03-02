@@ -1,105 +1,132 @@
 #!/usr/bin/env node
 /**
- * 每日工单总结脚本
+ * 每日工单总结脚本（优化版）
  * 
  * 定时任务：每天 22:00 执行
+ * 数据来源：飞书多维表格（Bitable）
+ * 
  * 功能：
- * 1. 获取当天的工单列表
+ * 1. 从多维表格读取当日已结束的工单
  * 2. 为每个工单生成独立总结文档
  * 3. 输出到 output/ 目录
  * 
- * 输出格式：
- * - output/summary-YYYY-MM-DD/           # 按日期分组
- *   - ticket-T20260302001.md             # 工单 1 总结
- *   - ticket-T20260302002.md             # 工单 2 总结
- *   - daily-overview.md                  # 每日总览
+ * 输出格式示例：
+ * output/summary-2026-03-02/
+ *   ├── ticket-T20260302001.md
+ *   ├── ticket-T20260302002.md
+ *   └── daily-overview.md
  */
 
 const fs = require('fs');
 const path = require('path');
 
 const OUTPUT_BASE = path.join(__dirname, '../output');
+const CONFIG_PATH = path.join(__dirname, '../config/bitable-config.json');
 
 /**
- * 模拟工单数据（阶段一）
- * TODO: 阶段二接入飞书工单 API
+ * 配置信息
  */
-function getTodayTickets() {
-  // 阶段一：返回空数组（实际数据需要从飞书 API 获取）
-  // 这里提供示例数据结构
+function loadConfig() {
+  try {
+    return require(CONFIG_PATH);
+  } catch (err) {
+    console.warn('⚠️  未找到 bitable-config.json，使用默认配置');
+    return {
+      bitableAppToken: '',  // 多维表格 AppToken
+      bitableTableId: '',   // 数据表 ID
+      dateField: '工单日期',
+      statusField: '状态',
+      closedStatus: '已结束'
+    };
+  }
+}
+
+/**
+ * 从飞书多维表格读取工单数据
+ * 
+ * TODO: 阶段一返回模拟数据，阶段二接入 Bitable API
+ * 
+ * @param {string} date - 日期 (YYYY-MM-DD)
+ * @returns {Promise<Array>} 工单列表
+ */
+async function getTicketsFromBitable(date) {
+  const config = loadConfig();
+  
+  console.log(`📊 从多维表格读取工单数据`);
+  console.log(`   日期：${date}`);
+  console.log(`   AppToken: ${config.bitableAppToken || '未配置'}`);
+  console.log(`   数据表：${config.bitableTableId || '未配置'}`);
+  
+  // 阶段一：返回模拟数据（示例）
+  // 阶段二：调用飞书 Bitable API
+  // https://open.feishu.cn/document/ukTMukTMukTM/uAjUwUjLxYjN14SO3gTN
+  
   return [
+    // 示例数据结构：
     // {
     //   ticketId: 'T20260302001',
-    //   title: '无法登录系统',
-    //   status: 'closed',
-    //   createTime: '2026-03-02T09:15:00+08:00',
-    //   closeTime: '2026-03-02T10:30:00+08:00',
-    //   requester: '张三',
-    //   assignee: '李四',
-    //   chatMessages: [...],  // 聊天记录
-    //   solution: '重置密码后解决'
+    //   date: '2026-03-02',
+    //   requester: '招财',
+    //   assignee: '算盘',
+    //   problemDesc: '用户报告智能外呼任务结束后总有少量数据无法完成...',
+    //   rootCause: '客户在下午 4-5 点非工作时间偷偷往任务中添加新数据...',
+    //   solution: '建议客户规范数据上传时间...',
+    //   category: '智能外呼',
+    //   tags: ['操作不当'],
+    //   status: '已结束'
     // }
   ];
 }
 
 /**
- * 为单个工单生成总结文档
+ * 生成工单总结文档（按用户提供的模板格式）
+ * 
+ * @param {object} ticket - 工单数据
+ * @returns {string} Markdown 内容
  */
 function generateTicketSummary(ticket) {
   const {
     ticketId,
-    title,
-    status,
-    createTime,
-    closeTime,
+    date,
     requester,
     assignee,
-    chatMessages = [],
-    solution
+    problemDesc,
+    rootCause,
+    solution,
+    category,
+    tags = []
   } = ticket;
 
-  // 计算处理时长
-  const duration = closeTime && createTime
-    ? Math.round((new Date(closeTime) - new Date(createTime)) / 60000) // 分钟
-    : null;
+  // 标签格式化
+  const tagsStr = tags.length > 0 ? tags.join(', ') : '无';
 
-  // 统计消息数量
-  const messageCount = chatMessages.length;
+  return `# 工单总结：${ticketId}
 
-  // 提取关键对话（阶段一简化处理）
-  const keyExchanges = chatMessages.slice(0, 5).map(msg => 
-    `**${msg.sender}** (${new Date(msg.timestamp).toLocaleTimeString('zh-CN')}): ${msg.content}`
-  ).join('\n\n');
+## 基本信息
 
-  return `# 工单总结：${title}
+- 工单提出日期：${date || '未记录'}
+- 工单提出人：${requester || '未记录'}
+- 工单对接人：${assignee || '未记录'}
 
-## 📋 基本信息
+## 问题描述
 
-| 字段 | 值 |
-|------|-----|
-| 工单号 | ${ticketId} |
-| 状态 | ${status} |
-| 申请人 | ${requester} |
-| 处理人 | ${assignee} |
-| 创建时间 | ${new Date(createTime).toLocaleString('zh-CN')} |
-| 关闭时间 | ${closeTime ? new Date(closeTime).toLocaleString('zh-CN') : '未关闭'} |
-| 处理时长 | ${duration ? `${duration} 分钟` : '未关闭'} |
+${problemDesc || '暂无描述'}
 
-## 💬 对话摘要
+## 问题根因
 
-**总消息数：** ${messageCount} 条
+${rootCause || '暂无分析'}
 
-${keyExchanges || '（暂无对话记录）'}
+## 解决方案
 
-## ✅ 解决方案
+${solution || '暂无方案'}
 
-${solution || '（暂无解决方案记录）'}
+## 问题类别
 
-## 📊 分类标签
+${category || '未分类'}
 
-- 问题类型：待分类
-- 紧急程度：待评估
-- 涉及系统：待标记
+## 问题标签
+
+${tagsStr}
 
 ---
 *本总结由 OpenClaw 自动生成 | 生成时间：${new Date().toLocaleString('zh-CN')}*
@@ -110,11 +137,22 @@ ${solution || '（暂无解决方案记录）'}
  * 生成每日总览文档
  */
 function generateDailyOverview(date, tickets) {
-  const closedCount = tickets.filter(t => t.status === 'closed').length;
-  const pendingCount = tickets.filter(t => t.status !== 'closed').length;
+  const closedCount = tickets.filter(t => t.status === '已结束').length;
+  
+  // 按类别统计
+  const categoryStats = {};
+  tickets.forEach(t => {
+    const cat = t.category || '未分类';
+    categoryStats[cat] = (categoryStats[cat] || 0) + 1;
+  });
+  
+  const categoryList = Object.entries(categoryStats)
+    .map(([cat, count]) => `- ${cat}: ${count} 个`)
+    .join('\n');
 
+  // 工单列表
   const ticketList = tickets.map(t => 
-    `- [${t.ticketId}] ${t.title} (${t.status}) - ${t.requester}`
+    `- [${t.ticketId}] ${t.category || '未分类'} - ${t.requester}`
   ).join('\n');
 
   return `# 工单日报 - ${date}
@@ -124,21 +162,15 @@ function generateDailyOverview(date, tickets) {
 | 指标 | 数值 |
 |------|------|
 | 工单总数 | ${tickets.length} |
-| 已关闭 | ${closedCount} |
-| 待处理 | ${pendingCount} |
-| 关闭率 | ${tickets.length > 0 ? Math.round(closedCount / tickets.length * 100) : 0}% |
+| 已结束 | ${closedCount} |
+
+## 📋 按类别统计
+
+${categoryList || '暂无数据'}
 
 ## 📝 工单列表
 
-${ticketList || '（今日无工单）'}
-
-## 🔍 常见问题
-
-（待实现：自动分析高频问题）
-
-## 📈 处理时效
-
-（待实现：统计平均处理时长）
+${ticketList || '今日无工单'}
 
 ---
 *本日报由 OpenClaw 自动生成 | 生成时间：${new Date().toLocaleString('zh-CN')}*
@@ -155,9 +187,9 @@ async function generateDailySummary(options = {}) {
   console.log(`📅 生成每日总结：${today}`);
   console.log(`📂 输出目录：${outputDir}`);
   
-  // 获取今日工单
-  const tickets = getTodayTickets();
-  console.log(`📋 发现工单：${tickets.length} 个`);
+  // 从多维表格获取工单
+  const tickets = await getTicketsFromBitable(today);
+  console.log(`📋 获取工单：${tickets.length} 个`);
   
   // 创建输出目录
   if (!fs.existsSync(outputDir)) {
@@ -205,7 +237,7 @@ async function generateDailySummary(options = {}) {
     outputDir,
     ticketCount: tickets.length,
     generatedFiles,
-    status: '阶段一：本地输出（阶段二可上传知识库）'
+    status: '阶段一：本地输出（需配置多维表格 AppToken）'
   };
 }
 

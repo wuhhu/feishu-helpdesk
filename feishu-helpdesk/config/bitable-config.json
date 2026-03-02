@@ -1,0 +1,24 @@
+{
+  "bitableAppToken": "",
+  "bitableTableId": "",
+  "dateField": "工单日期",
+  "statusField": "状态",
+  "closedStatus": "已结束",
+  "fieldMapping": {
+    "ticketId": "工单号",
+    "date": "工单日期",
+    "requester": "工单提出人",
+    "assignee": "工单对接人",
+    "problemDesc": "问题描述",
+    "rootCause": "问题根因",
+    "solution": "解决方案",
+    "category": "问题类别",
+    "tags": "问题标签",
+    "status": "状态"
+  },
+  "notes": {
+    "howToGetAppToken": "打开飞书多维表格，URL 中的 /base/ 后面的部分就是 AppToken",
+    "howToGetTableId": "打开数据表，URL 中的 /table/ 后面的部分就是 TableId",
+    "example": "URL: https://your-company.feishu.cn/base/bascnXXX123?table=tblXXX456 → AppToken: bascnXXX123, TableId: tblXXX456"
+  }
+}
