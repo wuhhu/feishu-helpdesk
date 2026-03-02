@@ -1,0 +1,40 @@
+# OpenClaw workspace ignore file
+
+# Agent auth profiles
+agents/*/agent/auth-profiles.json
+
+# Logs
+*.log
+logs/
+
+# Runtime
+.clawhub/
+
+# Personal identity (optional - uncomment if you want to keep private)
+# IDENTITY.md
+# USER.md
+
+# Memory (optional - uncomment if you want to keep private)
+# memory/
+# MEMORY.md
+
+# Skills (if you want to keep custom skills private)
+# skills/
+
+# Searxng config (if contains secrets)
+# searxng_config/
+# searxng_settings.yml
+
+# Node modules
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/

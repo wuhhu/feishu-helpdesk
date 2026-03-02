@@ -1,0 +1,12 @@
+{
+  "spaces": [],
+  "searchConfig": {
+    "maxResults": 5,
+    "includeSnippets": true
+  },
+  "answerTemplate": {
+    "prefix": "🔍 根据知识库搜索，找到以下相关信息：\n\n",
+    "itemFormat": "📌 **{title}**\n{snippet}\n\n",
+    "suffix": "💡 如果以上信息未能解决您的问题，请补充更多细节或联系人工支持。"
+  }
+}

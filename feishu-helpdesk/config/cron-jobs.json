@@ -1,0 +1,19 @@
+{
+  "name": "飞书工单每日总结",
+  "schedule": {
+    "kind": "cron",
+    "expr": "0 18 * * *",
+    "tz": "Asia/Shanghai"
+  },
+  "payload": {
+    "kind": "systemEvent",
+    "text": "【定时任务】执行飞书工单每日总结"
+  },
+  "sessionTarget": "main",
+  "enabled": true,
+  "metadata": {
+    "outputChannel": "webchat",
+    "outputFile": "output/daily-summary-{date}.md",
+    "summaryTimeRange": "24h"
+  }
+}
