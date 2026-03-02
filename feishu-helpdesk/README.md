@@ -18,7 +18,7 @@
 ### 2. 每日工单总结
 
 每天 22:00 自动执行：
-- ✅ 从飞书多维表格读取工单数据（或 Excel 导出）
+- ✅ **API 自动同步**（`feishu-bitable-sync.py`）或 Excel 导出
 - ✅ **Excel 转 JSON 工具**（`excel_to_json.py`）
 - ✅ **自动解析聊天记录**，提取问题描述/根因/解决方案
 - ✅ **智能分析问题类别**（9 种类型自动识别）
@@ -44,13 +44,15 @@ feishu-helpdesk/
 │   ├── bitable-config.json   # 多维表格配置 ⭐
 │   └── cron-jobs.json        # 定时任务配置
 ├── scripts/
-│   ├── main.js               # 主入口
-│   ├── search-knowledge.js   # 知识库搜索
-│   ├── message-handler.js    # 消息处理 ⭐
-│   ├── daily-summary.js      # 每日总结 ⭐
-│   ├── ticket-parser.js      # 工单解析器 ⭐
-│   ├── classifier.js         # 智能分类器 ⭐
-│   └── excel_to_json.py      # Excel 转 JSON ⭐
+│   ├── main.js                   # 主入口
+│   ├── search-knowledge.js       # 知识库搜索
+│   ├── message-handler.js        # 消息处理 ⭐
+│   ├── daily-summary.js          # 每日总结 ⭐
+│   ├── ticket-parser.js          # 工单解析器 ⭐
+│   ├── classifier.js             # 智能分类器 ⭐
+│   ├── excel_to_json.py          # Excel 转 JSON ⭐
+│   ├── feishu-bitable-sync.py    # API 同步工具 ⭐
+│   └── requirements.txt          # Python 依赖
 └── output/
     └── summary-YYYY-MM-DD/   # 总结输出
 ```
@@ -180,6 +182,15 @@ openclaw cron run --job-id <JOB_ID>
 
 ---
 
+## 📊 数据获取方式
+
+| 方式 | 工具 | 适用场景 |
+|------|------|----------|
+| **API 自动同步** | `feishu-bitable-sync.py` | 定时任务、自动化 |
+| **Excel 导出** | `excel_to_json.py` | 手动导出、临时使用 |
+
+---
+
 ## 🧪 测试
 
 ### Node.js 脚本
@@ -211,11 +222,14 @@ cd /home/admin/.openclaw/workspace/feishu-helpdesk/scripts
 # 安装依赖
 pip install -r requirements.txt
 
-# 单个文件转换
+# Excel 转 JSON
 python excel_to_json.py ticket_123.xlsx
 
 # 批量转换
 python excel_to_json.py --batch ./excel_files ./json_output
+
+# API 同步（需配置 AK/SK）
+python feishu-bitable-sync.py --config bitable-sync-config.json --date 2024-08-08
 ```
 
 ---

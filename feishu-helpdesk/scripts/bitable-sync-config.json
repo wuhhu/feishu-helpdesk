@@ -1,0 +1,19 @@
+{
+  "app_id": "",
+  "app_secret": "",
+  "access_token": "",
+  "bitable_app_token": "",
+  "bitable_table_id": "",
+  "output_dir": "../output/raw-data",
+  "date_field": "工单日期",
+  "status_field": "状态",
+  "closed_status": "已结束",
+  "chat_record_field": "聊天记录",
+  "ticket_title_field": "工单标题",
+  "ticket_id_field": "工单 ID",
+  "notes": {
+    "如何获取 AK/SK": "https://open.feishu.cn/app",
+    "如何获取 AppToken": "打开飞书多维表格，URL 中的 /base/ 后面的部分",
+    "如何获取 TableId": "打开数据表，URL 中的 /table/ 后面的部分"
+  }
+}
