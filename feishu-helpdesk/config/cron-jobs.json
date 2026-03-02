@@ -2,18 +2,26 @@
   "name": "飞书工单每日总结",
   "schedule": {
     "kind": "cron",
-    "expr": "0 18 * * *",
+    "expr": "0 22 * * *",
     "tz": "Asia/Shanghai"
   },
   "payload": {
     "kind": "systemEvent",
-    "text": "【定时任务】执行飞书工单每日总结"
+    "text": "【定时任务】执行飞书工单每日总结 - 运行 node /home/admin/.openclaw/workspace/feishu-helpdesk/scripts/daily-summary.js"
   },
   "sessionTarget": "main",
   "enabled": true,
   "metadata": {
-    "outputChannel": "webchat",
-    "outputFile": "output/daily-summary-{date}.md",
-    "summaryTimeRange": "24h"
+    "description": "每晚 22:00 总结当日已结束的工单，为每个工单生成独立总结文档",
+    "outputDir": "output/summary-{date}/",
+    "outputFormat": {
+      "perTicket": "ticket-{ticketId}.md",
+      "dailyOverview": "daily-overview.md"
+    },
+    "stage2Upgrade": {
+      "uploadToWiki": true,
+      "wikiSpaceId": "待配置",
+      "requiresPermission": "wiki:wiki:write"
+    }
   }
 }

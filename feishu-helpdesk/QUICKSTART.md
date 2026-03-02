@@ -48,16 +48,17 @@ openclaw cron list
 
 ### 添加每日总结任务
 ```bash
-# 方法 1：使用配置文件
-openclaw cron add --job config/cron-jobs.json
+# 方法 1：运行脚本（推荐）
+bash setup-cron.sh
 
-# 方法 2：手动添加（每天 18:00 执行）
+# 方法 2：手动添加（每天 22:00 执行）
 openclaw cron add \
   --name "飞书工单每日总结" \
-  --schedule "0 18 * * *" \
-  --payload-kind systemEvent \
-  --payload-text "【定时任务】执行飞书工单每日总结" \
-  --session-target main
+  --schedule-cron "0 22 * * *" \
+  --schedule-tz "Asia/Shanghai" \
+  --payload-kind "systemEvent" \
+  --payload-text "【定时任务】执行飞书工单每日总结 - 运行 node /home/admin/.openclaw/workspace/feishu-helpdesk/scripts/daily-summary.js" \
+  --session-target "main"
 ```
 
 ### 测试定时任务

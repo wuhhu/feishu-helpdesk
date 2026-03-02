@@ -75,9 +75,10 @@ feishu-helpdesk/
 
 ### 3. 定时总结
 
-默认每天 18:00 自动执行总结任务，输出到：
-- 指定群聊
-- 本地文件 `output/daily-summary-YYYY-MM-DD.md`
+默认每天 22:00 自动执行总结任务，输出到：
+- 本地目录 `output/summary-YYYY-MM-DD/`
+- 每个工单独立文档：`ticket-{工单号}.md`
+- 每日总览：`daily-overview.md`
 
 ---
 
